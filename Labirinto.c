@@ -1,86 +1,20 @@
-#include <stdio.h>
-
-#define FALSE 0
-#define TRUE 1
-
-#define INICIO 'I'
-#define PAREDE '#'
-#define DISPONIVEL ' '
-#define SAIDA 'S'
-#define CAMINHO_CERTO '+'
-#define CAMINHO_ERRADO 'x'
-
-#define N_LINHAS 10
-#define N_COLUNAS 20
-
-typedef struct
-{
-  int linha;
-  int coluna;
-} Posicao;
-
-typedef struct
-{
-  int linhas;
-  int colunas;
-  char **matriz;
-} Labirinto;
-
-Labirinto *carregaLabirinto();
-void imprimeLabirinto(int linhas, int colunas, char labirinto[linhas][colunas]);
-Posicao posicaoInicial(int linhas, int colunas, char labirinto[linhas][colunas]);
-int resolveLabirinto(int linhas, int colunas, char labirinto[linhas][colunas], int x, int y);
-
-int main()
-{
-  // char labirinto[N_LINHAS][N_COLUNAS] =
-  //     {
-  //         "####################",
-  //         "#I              ## #",
-  //         "# ### ######## ### #",
-  //         "# ###    ####      #",
-  //         "##### ## ###########",
-  //         "#     ## ###     ###",
-  //         "########     ### ###",
-  //         "################ ###",
-  //         "S                ###",
-  //         "####################"};
-
-  Labirinto *labirinto = carregaLabirinto();
-
-  imprimeLabirinto(N_LINHAS, N_COLUNAS, labirinto);
-
-  Posicao inicio = posicaoInicial(N_LINHAS, N_COLUNAS, labirinto);
-
-  if (inicio.coluna == -1 && inicio.linha == -1)
-    printf("Error: Missing INICIO symbol S!\n");
-  else if (inicio.coluna == -2 && inicio.linha == -2)
-    printf("Error: Multiple INICIO symbols!\n");
-  else
-  {
-    int achou = resolveLabirinto(N_LINHAS, N_COLUNAS, labirinto, inicio.coluna, inicio.linha);
-    if (achou)
-      printf("Caminho encontrado!\n");
-    else
-      printf("Caminho nao encontrado.\n");
-    imprimeLabirinto(N_LINHAS, N_COLUNAS, labirinto);
-  }
-
-  return 0;
-}
+#include "Labirinto.h"
 
 Labirinto *carregaLabirinto()
 {
-  char *caminhoArquivo;
+  char caminhoArquivo[TAM_MAX];
   printf("Digite o caminho para o arquivo do labirinto: ");
-  scanf("%s", caminhoArquivo);
+  scanf("%s", &caminhoArquivo);
   FILE *arquivo = fopen(caminhoArquivo, "r");
+
+  if (arquivo == NULL)
+    printf("Arquivo nao encontrado");
 
   int linhas, colunas;
   fscanf(arquivo, "%d", &linhas);
   fscanf(arquivo, "%d", &colunas);
 
-  Labirinto *labirinto = NULL;
+  Labirinto *labirinto = (Labirinto *)malloc(sizeof(Labirinto));
   labirinto->linhas = linhas;
   labirinto->colunas = colunas;
 
@@ -99,17 +33,17 @@ Labirinto *carregaLabirinto()
   return labirinto;
 }
 
-void imprimeLabirinto(int linhas, int colunas, char labirinto[linhas][colunas])
+void imprimeLabirinto(Labirinto *labirinto)
 {
-  for (int y = 0; y < linhas; y++)
+  for (int y = 0; y < labirinto->linhas; y++)
   {
-    for (int x = 0; x < colunas; x++)
+    for (int x = 0; x < labirinto->colunas; x++)
     {
-      if (labirinto[y][x] == CAMINHO_CERTO)
+      if (labirinto->matriz[y][x] == CAMINHO_CERTO)
         printf("\033[1;32m");
-      else if (labirinto[y][x] == CAMINHO_ERRADO)
+      else if (labirinto->matriz[y][x] == CAMINHO_ERRADO)
         printf("\033[1;31m");
-      printf("%c", labirinto[y][x]);
+      printf("%c", labirinto->matriz[y][x]);
       printf("\033[0m");
     }
     printf("\n");
@@ -120,15 +54,15 @@ void imprimeLabirinto(int linhas, int colunas, char labirinto[linhas][colunas])
 // Funcao que retorna a posicao inicial do labirinto
 // Se nao encontra o simbolo inicial retorna x e y = -1
 // Se caso tiver dois simbolos iniciais retorna x e y = -2
-Posicao posicaoInicial(int linhas, int colunas, char labirinto[linhas][colunas])
+Posicao posicaoInicial(Labirinto *labirinto)
 {
   int achou = 0;
   Posicao p;
-  for (int y = 0; y < linhas; y++)
+  for (int y = 0; y < labirinto->linhas; y++)
   {
-    for (int x = 0; x < colunas; x++)
+    for (int x = 0; x < labirinto->colunas; x++)
     {
-      if (labirinto[y][x] == INICIO)
+      if (labirinto->matriz[y][x] == INICIO)
       {
         if (achou > 0)
         {
@@ -151,40 +85,40 @@ Posicao posicaoInicial(int linhas, int colunas, char labirinto[linhas][colunas])
 }
 
 // Funcao recursiva para resolver o labirinto, utilizando backtracking
-int resolveLabirinto(int linhas, int colunas, char labirinto[linhas][colunas], int x, int y)
+int resolveLabirinto(Labirinto *labirinto, int x, int y)
 {
   // Verificar se a posicao eh valida
-  if (x < 0 || x > colunas - 1 || y < 0 || y > linhas - 1)
+  if (x < 0 || x > labirinto->colunas - 1 || y < 0 || y > labirinto->linhas - 1)
     return FALSE;
 
   // Verificar se achou a saida
-  if (labirinto[y][x] == SAIDA)
+  if (labirinto->matriz[y][x] == SAIDA)
     return TRUE;
 
   // Verificar se eh uma posicao disponivel para andar
-  if (labirinto[y][x] != DISPONIVEL && labirinto[y][x] != INICIO)
+  if (labirinto->matriz[y][x] != DISPONIVEL && labirinto->matriz[y][x] != INICIO)
     return FALSE;
 
   // Marca a posicao como caminho para saida
-  if (labirinto[y][x] != INICIO)
-    labirinto[y][x] = CAMINHO_CERTO;
+  if (labirinto->matriz[y][x] != INICIO)
+    labirinto->matriz[y][x] = CAMINHO_CERTO;
 
   // Verifica qual camimho seguir como parte do caminho da solucao em todas as direcoes
-  if (resolveLabirinto(linhas, colunas, labirinto, x, y - 1)) // cima
+  if (resolveLabirinto(labirinto, x, y - 1)) // cima
     return TRUE;
 
-  if (resolveLabirinto(linhas, colunas, labirinto, x + 1, y)) // direita
+  if (resolveLabirinto(labirinto, x + 1, y)) // direita
     return TRUE;
 
-  if (resolveLabirinto(linhas, colunas, labirinto, x, y + 1)) // baixo
+  if (resolveLabirinto(labirinto, x, y + 1)) // baixo
     return TRUE;
 
-  if (resolveLabirinto(linhas, colunas, labirinto, x - 1, y)) // esquerda
+  if (resolveLabirinto(labirinto, x - 1, y)) // esquerda
     return TRUE;
 
   // Se nenhum dos movimentos acima funcionar, backtrack. Retira a posicao como parte do caminho da solucao
-  if (labirinto[y][x] != INICIO)
-    labirinto[y][x] = CAMINHO_ERRADO;
+  if (labirinto->matriz[y][x] != INICIO)
+    labirinto->matriz[y][x] = CAMINHO_ERRADO;
 
   return FALSE;
 }

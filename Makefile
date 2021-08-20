@@ -1,7 +1,4 @@
-all: compile run
+all: compile
 
 compile:
-	gcc Labirinto.c -o Labirinto
-
-run:
-	.\Labirinto.exe
+	gcc main.c -o main Labirinto.c
